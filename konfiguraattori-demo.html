@@ -2,118 +2,222 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kymppikaide – Konfiguraattoridemo</title>
+  <title>Kymppikaide – Konfiguraattori V2</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width:650px; margin:18px auto; }
+    body { font-family: Arial, sans-serif; max-width:700px; margin:18px auto; }
     h2 { margin-top:0; }
-    canvas { border: 1px solid #888; }
+    canvas { border: 1px solid #888; cursor: crosshair; }
     label { font-size:0.98em; }
     .row { margin-bottom: 10px; }
     .msg { color: green; font-weight:bold }
-    ul{font-size:0.92em;}
+    .mitat { font-size:0.95em; margin-top:7px;}
+    .config-section {border:1px solid #cfcfcf; padding:10px 15px; margin:12px 0; border-radius:7px; background: #fafbfc;}
   </style>
 </head>
 <body>
   <h2>Kymppikaide – Tarjouskonfiguraattori</h2>
-  <p>Piirrä haluamasi kaiteen ja käsijohteen muodot! Kaiteen pituus (sininen), käsijohteen pituus (punainen).</p>
-  <canvas id="canvas" width="500" height="300"></canvas>
+  <div class="config-section">
+    <div class="row">
+      <b>Väri:</b>
+      <select id="color">
+        <option value="RAL9005">Musta (RAL9005)</option>
+        <option value="RAL9010">Valkoinen (RAL9010)</option>
+        <option value="RAL7024">Tumman harmaa (RAL7024)</option>
+        <option value="RAL7040">Vaalean harmaa (RAL7040)</option>
+      </select>
+      <span id="colorPreview" style="display:inline-block;width:25px;height:19px;margin-left:8px;border:1px solid #888"></span>
+    </div>
+    <div class="row">
+      <b>Kiinnitysmateriaali:</b>
+      <select id="material">
+        <option value="betoni">Betoni</option>
+        <option value="puu">Puu</option>
+        <option value="muu">Muu - määrittele</option>
+      </select>
+      <input id="customMaterial" type="text" placeholder="Muu materiaali" style="display:none;width:120px;">
+    </div>
+  </div>
+  <canvas id="canvas" width="520" height="320"></canvas>
   <div style="margin:10px 0;">
     <b>Kaiteen pituus:</b> <span id="railingLength">0.00</span> m &nbsp;&nbsp;
     <b>Käsijohteen pituus:</b> <span id="handrailLength">0.00</span> m
   </div>
+  <div class="mitat" id="viivalista"></div>
+  <div style="margin-bottom:10px;"><small>
+    <b>Ohje:</b> Vasemmalla napilla piirrä pisteitä. Oikealla napilla (hiiren oikea) vaihda piirtotilaa (kaide / käsijohde).  
+    Näet viivan pituuden automaattisesti, ja voit muuttaa arvoa klikkaamalla mittalabelia.
+  </small></div>
 
   <form id="quotationForm">
-    <h3>Pakolliset yhteystiedot</h3>
+    <h3>Yhteystiedot</h3>
     <div class="row"><input name="nimi" required placeholder="Nimi" style="width:98%"></div>
     <div class="row"><input name="osoite" required placeholder="Osoite" style="width:98%"></div>
     <div class="row"><input name="puhelin" required placeholder="Puhelinnumero" style="width:98%"></div>
     <div class="row"><input name="email" type="email" required placeholder="Sähköposti" style="width:98%"></div>
     <div class="row">
       <b>Toimitustapa:</b><br>
-      <label><input type="radio" name="toimitus" value="asennus" checked> Kaiteet asennettuna (vain PK-seutu)</label><br>
+      <label><input type="radio" name="toimitus" value="asennus" checked> Kaiteet asennettuna (vain PK-seutu)</label>
       <label><input type="radio" name="toimitus" value="tarvike"> Tarviketoimitus (itseasennettavaksi)</label>
     </div>
-    <div class="row">
-      <button type="submit" style="font-size:1.05em;">Lähetä tarjouspyyntö</button>
+    <div class="row"><button type="submit" style="font-size:1.05em;">Lähetä tarjouspyyntö</button>
+    <span id="msg" class="msg"></span>
     </div>
-    <div id="msg" class="msg"></div>
   </form>
 
-  <ul>
-    <li><b>Napsauta canvasia</b> piirtääksesi pisteitä kaiteeseen (sininen) tai käsijohteeseen (punainen)</li>
-    <li><b>Oikea klikkaus</b> vaihtaa piirrettävää kerrosta (kaide/käsijohde)</li>
-    <li><b>Pyyhki kaikki</b> (refresh) saadaksesi uuden piirron</li>
-    <li><b>Täytä yhteystiedot</b> ennen lähetystä!</li>
-  </ul>
-
   <script>
-    // Piirtäjä: Sininen = kaide, punainen = käsijohde
+    // Värin esikatselu
+    const colorPreview = document.getElementById('colorPreview');
+    function updateColor() {
+      let color = document.getElementById('color').value;
+      let code = (color==="RAL9005")?"#222":(color==="RAL9010")?"#efefef":(color==="RAL7024")?"#565d66":"#cfd1d0";
+      colorPreview.style.background = code;
+    }
+    document.getElementById('color').addEventListener('change', updateColor); updateColor();
+    // Kiinnitysmateriaali - muu
+    document.getElementById('material').addEventListener('change',(e)=>{
+      document.getElementById('customMaterial').style.display=(e.target.value==='muu')?'inline-block':'none';
+    });
+
+    // Canvas-piirtäjä
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let railing = [];
     let handrail = [];
-    let drawing = false;
+    let manualLengthsR = [];
+    let manualLengthsH = [];
     let currentLayer = 'railing';
+    let hover = null;
 
-    function dist(a, b) {
-      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2) / 50; // px -> m
-    }
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.lineCap = 'round';
-      // Kaide (sininen)
+    function meter(px){ return px/50; }
+    function px(m){ return m*50; }
+    function dist(a,b){ return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)/50; }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.lineCap='round';
+      // Kaide
       if (railing.length) {
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        railing.forEach((pt,i) => i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+        ctx.strokeStyle='blue'; ctx.lineWidth=4; ctx.beginPath();
+        railing.forEach((pt,i)=>i==0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
         ctx.stroke();
+        // Segmenttien pituuslabelit
+        for(let i=1;i<railing.length;i++){
+          let mid = {x:(railing[i-1].x+railing[i].x)/2, y:(railing[i-1].y+railing[i].y)/2};
+          let len = manualLengthsR[i-1]!==undefined?manualLengthsR[i-1]:dist(railing[i-1],railing[i]);
+          drawLabel(mid.x, mid.y-15, len, i-1, 'railing');
+        }
       }
-      // Käsijohde (punainen)
+      // Käsijohde
       if (handrail.length) {
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        handrail.forEach((pt,i) => i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+        ctx.strokeStyle='red'; ctx.lineWidth=2; ctx.beginPath();
+        handrail.forEach((pt,i)=>i==0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
         ctx.stroke();
+        for(let i=1;i<handrail.length;i++){
+          let mid = {x:(handrail[i-1].x+handrail[i].x)/2, y:(handrail[i-1].y+handrail[i].y)/2};
+          let len = manualLengthsH[i-1]!==undefined?manualLengthsH[i-1]:dist(handrail[i-1],handrail[i]);
+          drawLabel(mid.x, mid.y+15, len, i-1, 'handrail');
+        }
+      }
+      // Hover preview
+      if (hover) {
+        ctx.strokeStyle=(currentLayer=='railing')?'#0093ff':'#ff5252';
+        ctx.lineWidth=(currentLayer=='railing')?4:2;
+        let arr = (currentLayer=='railing')?railing:handrail;
+        if(arr.length){
+          ctx.beginPath();
+          ctx.moveTo(arr[arr.length-1].x, arr[arr.length-1].y);
+          ctx.lineTo(hover.x, hover.y);
+          ctx.setLineDash([7, 6]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
       }
     }
-    canvas.addEventListener('mousedown', e => {
+
+    function drawLabel(x,y,val,seg,layer){
+      ctx.save();
+      ctx.font="13px Arial";
+      ctx.fillStyle="#222";
+      let txt = val.toFixed(2)+" m";
+      ctx.fillText(txt, x-18, y);
+      ctx.restore();
+    }
+
+    // Segmenttien pituuslista ja muutos
+    function updateLengths(){
+      let rLen=0,hLen=0, rows=[];
+      for(let i=1;i<railing.length;i++){
+        let len = manualLengthsR[i-1]!==undefined?manualLengthsR[i-1]:dist(railing[i-1],railing[i]);
+        rLen+=len;
+        rows.push(`<span style="color:blue">Kaide ${i}:</span> <a href="#" data-layer="r" data-seg="${i-1}" class="setlen">${len.toFixed(2)} m</a>`);
+      }
+      for(let i=1;i<handrail.length;i++){
+        let len = manualLengthsH[i-1]!==undefined?manualLengthsH[i-1]:dist(handrail[i-1],handrail[i]);
+        hLen+=len;
+        rows.push(`<span style="color:red">Käsijohde ${i}:</span> <a href="#" data-layer="h" data-seg="${i-1}" class="setlen">${len.toFixed(2)} m</a>`);
+      }
+      document.getElementById('railingLength').textContent=rLen.toFixed(2);
+      document.getElementById('handrailLength').textContent=hLen.toFixed(2);
+      document.getElementById('viivalista').innerHTML="Yksittäiset viivamitat: <br>"+rows.join(" | ");
+    }
+    document.getElementById('viivalista').onclick=function(e){
+      if(e.target.classList.contains('setlen')){
+        let layer=e.target.dataset.layer, seg=+e.target.dataset.seg;
+        let u=prompt("Anna viivan uusi mitta (m):",e.target.textContent);
+        let ur = parseFloat(u.replace(',','.'));
+        if(!isNaN(ur)&&ur>0){
+          if(layer=='r') manualLengthsR[seg]=ur;
+          else manualLengthsH[seg]=ur;
+          updateLengths(); draw();
+        }
+        e.preventDefault();
+      }
+    };
+
+    canvas.addEventListener('mousemove',e=>{
+      let rect = canvas.getBoundingClientRect();
+      hover = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+      draw();
+    });
+    canvas.addEventListener('mouseleave', e=>{ hover=null; draw(); });
+
+    canvas.addEventListener('mousedown', e=>{
       const pt = { x: e.offsetX, y: e.offsetY };
-      if (currentLayer === 'railing') railing.push(pt);
-      else handrail.push(pt);
+      if (currentLayer === 'railing') { railing.push(pt); }
+      else { handrail.push(pt); }
       draw(); updateLengths();
     });
-    canvas.addEventListener('contextmenu', e => {
+    canvas.addEventListener('contextmenu', e=>{
       e.preventDefault();
       currentLayer = currentLayer === 'railing' ? 'handrail' : 'railing';
       alert(currentLayer==='railing'?"Piirrä kaidetta (sininen)":"Piirrä käsijohdetta (punainen)");
     });
-    function updateLengths() {
-      let rLen = 0, hLen = 0;
-      for (let i = 1; i < railing.length; i++) rLen += dist(railing[i - 1], railing[i]);
-      for (let i = 1; i < handrail.length; i++) hLen += dist(handrail[i - 1], handrail[i]);
-      document.getElementById('railingLength').textContent = rLen.toFixed(2);
-      document.getElementById('handrailLength').textContent = hLen.toFixed(2);
-    }
 
-    // Lomakkeen lähetys (demo-versio)
+    // Resetointi (refresh selaimella) - toimii!
+
+    // Lomakkeen lähetys (demo)
     document.getElementById('quotationForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const fd = new FormData(e.target);
       let data = {};
-      for (const [k, v] of fd.entries()) data[k] = v;
+      for(const [k,v] of fd.entries()) data[k]=v;
       data.railingLength = document.getElementById('railingLength').textContent;
       data.handrailLength = document.getElementById('handrailLength').textContent;
       data.railingData = railing;
       data.handrailData = handrail;
-      document.getElementById('msg').textContent = 
+      data.manualLengthsR = manualLengthsR;
+      data.manualLengthsH = manualLengthsH;
+      data.color = document.getElementById('color').value;
+      let materialSel = document.getElementById('material').value;
+      data.material = materialSel==='muu'?document.getElementById('customMaterial').value:materialSel;
+      document.getElementById('msg').textContent =
         "Kiitos tarjouspyynnöstä! (Demo: ilmoitus vain tähän, backend-toteutus myöhemmin)";
-      // Voit lähettää datan API:han näin:
-      // fetch('https://oma-backendi-url.fi/api/quotation', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-      // Toista: Lisää backend myöhemmin!
+      // Voit lähettää datan API:han jne.
       setTimeout(()=>document.getElementById('msg').textContent="",4000);
     });
+
+    draw();
+    updateLengths();
   </script>
 </body>
 </html>
