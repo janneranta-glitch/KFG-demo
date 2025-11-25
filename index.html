@@ -4,23 +4,27 @@
   <meta charset="UTF-8">
   <title>Kymppikaide – Konfiguraattori</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width:900px; margin:20px auto;}
+    body { font-family: Arial, sans-serif; max-width:1000px; margin:20px auto;}
     .row, .row2 {margin-bottom:15px;}
-    .row2 {margin-top:7px;}
     .config-section, .draw-section {background:#f6f6f6; border:1px solid #e0e0e0; border-radius:7px; padding:15px; margin-bottom:15px;}
-    .msg {color:green; font-weight:bold;}
     .toolbar {margin-bottom: 10px;}
     .toolbar button {margin-right:6px; font-size:1em; padding:6px 12px; border-radius:4px;}
     .toolbar .active {background:#e0eafc;}
     canvas {border: 1px solid #888; background:#fff;}
+    #three-canvas { border:1px solid #666; margin-top:10px; border-radius:4px; background: #e6e9ef;}
     .file-label{margin-right:12px;}
-    .info{font-size:0.97em; margin-bottom:14px;}
+    .row2 .info{font-size:0.97em; margin-bottom:14px;}
+    #price-box {background:#e8ffe8; border:1px solid #b5dbb0; border-radius:5px; padding:10px; font-size:1.1em; margin-bottom:15px; display:inline-block;}
+    .row-top {margin-bottom:10px;}
   </style>
 </head>
 <body>
   <h2>Kymppikaide – konfiguraattori</h2>
-  <!-- Piirtoalusta pohjavalinnoilla -->
   <div class="draw-section">
+    <div class="row-top">
+      <b>Etäisyys kohteeseen Lammaskallionkatu 8 Kerava:</b>
+      <input type="number" id="etaisyys" value="15" min="0" step="1" style="width:65px;"> km
+    </div>
     <b>Piirrettävän pohjan tyyppi:</b>
     <select id="pohjaValinta">
       <option value="terassi">Terassi</option>
@@ -29,10 +33,11 @@
     <span id="terassiOptions">
       Leveys: <input type="number" id="terassiLeveys" value="3.0" step="0.01" min="1.0" max="10.0" style="width:60px;"> m
       Pituus: <input type="number" id="terassiPituus" value="5.5" step="0.01" min="1.0" max="20.0" style="width:60px;"> m
+      Korkeus: <input type="number" id="terassiKorkeus" value="1.0" step="0.01" min="0.2" max="4.0" style="width:60px;"> m
     </span>
     <span id="porrasOptions" style="display:none">
       Nousu: <input type="number" id="porrasNousu" value="180" step="1" min="80" max="250" style="width:50px;"> mm
-      Etenemä: <input type="number" id="porrasEtenema" value="260" step="1" min="150" max="350" style="width:50px;"> mm
+      Etenemä: <input type="number" id="porrasEtenema" value="260" step="1" min="150" max="350" style="width:50px;">
       Askelmien määrä: <input type="number" id="porrasAskelma" value="7" step="1" min="2" max="30" style="width:45px;">
     </span>
     <div class="toolbar">
@@ -42,7 +47,14 @@
       <button id="cutLine">Leikkaa (sakset)</button>
       <button id="undoDraw">Undo viimeisin</button>
     </div>
-    <canvas id="canvas" width="820" height="400"></canvas>
+    <canvas id="canvas" width="950" height="470"></canvas>
+    <div style="margin:10px 0" id="lengths"></div>
+    <button id="preview3d">Näytä 3D-esikatselu</button>
+    <br>
+    <div id="three-area">
+      <canvas id="three-canvas" width="600" height="320"></canvas>
+    </div>
+    <div id="price-box"></div>
   </div>
 
   <div class="row2 info">
@@ -90,13 +102,11 @@
         <option value="mustateräs">Mustateräs</option>
         <option value="harjattu_rst">Harjattu RST</option>
       </select>
-      <span>
-        Tuleeko käsijohde ulos?
-        <select id="handrailOutdoor">
-          <option value="ei">Ei</option>
-          <option value="kyllä">Kyllä</option>
-        </select>
-      </span>
+      &nbsp;Tuleeko käsijohde ulos?
+      <select id="handrailOutdoor">
+        <option value="ei">Ei</option>
+        <option value="kyllä">Kyllä</option>
+      </select>
     </div>
     <div class="row">
       <b>Käsijohteen väri:</b>
@@ -105,6 +115,14 @@
         <option value="RAL9010">Valkoinen (RAL9010)</option>
         <option value="RAL7024">Tumman harmaa (RAL7024)</option>
         <option value="RAL7040">Vaalean harmaa (RAL7040)</option>
+      </select>
+    </div>
+    <div class="row">
+      <b>Toimitusmuoto:</b>
+      <select id="deliveryType">
+        <option value="asennus">Asennus</option>
+        <option value="toimitus">Toimitus työmaalle</option>
+        <option value="noudan">Noudan itse</option>
       </select>
     </div>
     <div class="row"><button type="submit" style="font-size:1.05em;">Lähetä tarjouspyyntö</button>
@@ -118,33 +136,30 @@
       let tyyppi = this.value;
       document.getElementById('terassiOptions').style.display = tyyppi === 'terassi' ? 'inline' : 'none';
       document.getElementById('porrasOptions').style.display = tyyppi === 'porras' ? 'inline' : 'none';
+      draw();
     };
 
-    // Canvas-koodissa: tilan vaihto napista
-    let mode = 'railing', drawing=false;
-    let railing = [], handrail = [];
-    let undoStack = [];
-
+    // Canvas-napit ja piirto
+    let mode='railing', drawing=false;
+    let railing=[], handrail=[], undoStack=[];
+    document.getElementById('drawRailing').onclick = ()=>setMode('railing');
+    document.getElementById('drawHandrail').onclick = ()=>setMode('handrail');
+    document.getElementById('finishDraw').onclick = ()=>drawing=false;
+    document.getElementById('undoDraw').onclick = function() {
+      if(mode=='railing' && railing.length>0) { undoStack.push(railing.pop()); }
+      if(mode=='handrail' && handrail.length>0) { undoStack.push(handrail.pop()); }
+      draw(); updatePrice();
+    };
+    document.getElementById('cutLine').onclick = function(){
+      if(mode=='railing' && railing.length>0) { railing.pop(); }
+      if(mode=='handrail' && handrail.length>0) { handrail.pop(); }
+      draw(); updatePrice();
+    };
     function setMode(m) {
       mode = m;
       document.getElementById('drawRailing').classList.toggle('active', m=='railing');
       document.getElementById('drawHandrail').classList.toggle('active', m=='handrail');
     }
-    document.getElementById('drawRailing').onclick = ()=>setMode('railing');
-    document.getElementById('drawHandrail').onclick = ()=>setMode('handrail');
-    document.getElementById('finishDraw').onclick = ()=>drawing=false;
-
-    document.getElementById('undoDraw').onclick = function() {
-      if(mode=='railing' && railing.length>0) { undoStack.push(railing.pop()); }
-      if(mode=='handrail' && handrail.length>0) { undoStack.push(handrail.pop()); }
-      draw();
-    };
-
-    document.getElementById('cutLine').onclick = function(){
-      if(mode=='railing' && railing.length>0) { railing.pop(); }
-      if(mode=='handrail' && handrail.length>0) { handrail.pop(); }
-      draw();
-    };
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -154,27 +169,47 @@
       drawing = true;
       if(mode=='railing') railing.push(pt);
       else handrail.push(pt);
-      draw();
+      draw(); updatePrice();
     };
 
     function draw(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      // pohja: terassi/porras
-      let tyyppi = document.getElementById('pohjaValinta').value;
+      // Pohja: terassi tai portaat
+      let tyyppi=document.getElementById('pohjaValinta').value;
       if(tyyppi=='terassi'){
-        let w=parseFloat(document.getElementById('terassiLeveys').value), h=parseFloat(document.getElementById('terassiPituus').value);
-        ctx.strokeStyle="#d3c551"; ctx.lineWidth=2; ctx.strokeRect(60,60,w*70,h*30); // skaalataan demoarvoilla
+        let w=parseFloat(document.getElementById('terassiLeveys').value), h=parseFloat(document.getElementById('terassiPituus').value), k=parseFloat(document.getElementById('terassiKorkeus').value);
+        ctx.fillStyle="#e6e9ed"; ctx.fillRect(90,340-k*100,w*70,h*40);
+        ctx.strokeStyle="#7ca826"; ctx.lineWidth=3;
+        ctx.strokeRect(90,340-k*100,w*70,h*40);
+        ctx.fillStyle="#222"; ctx.font="12px Arial";
+        ctx.fillText("Terassi",105,340-k*100+20);
+        ctx.fillText("Leveys "+w.toFixed(2)+"m",95,340-k*100+35);
+        ctx.fillText("Pituus "+h.toFixed(2)+"m",95,340-k*100+55);
+        ctx.fillText("Korkeus "+k.toFixed(2)+"m",95,340-k*100+75);
       } else if(tyyppi=='porras') {
         let nousu=parseInt(document.getElementById('porrasNousu').value), ete=parseInt(document.getElementById('porrasEtenema').value), n=parseInt(document.getElementById('porrasAskelma').value);
-        ctx.strokeStyle="#c7914d"; ctx.lineWidth=2;
-        let x=60, y=320;
-        for(let i=0; i<n; i++){
-          ctx.beginPath();
-          ctx.moveTo(x,y);
-          y -= nousu/2; x += ete/2; // Demo skaalaus!
-          ctx.lineTo(x,y);
-          ctx.stroke();
+        let x=120, y=400;
+        ctx.strokeStyle="#a38852"; ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.moveTo(x,y);
+        for(let i=0; i<n; i++) {
+          ctx.lineTo(x+ete*1.2/10, y-nousu*1.2/10);
+          x+=ete*1.2/10; y-=nousu*1.2/10;
         }
+        ctx.stroke();
+        ctx.strokeStyle="#c9ad7a"; ctx.lineWidth=1.2;
+        x=120; y=400;
+        for(let i=0; i<n; i++) {
+          ctx.beginPath();
+          ctx.moveTo(x+ete*1.2/10, y-nousu*1.2/10);
+          ctx.lineTo(x+ete*1.2/10,y-nousu*1.2/10-22);
+          ctx.stroke();
+          x+=ete*1.2/10; y-=nousu*1.2/10;
+        }
+        ctx.fillStyle="#222"; ctx.font="12px Arial";
+        ctx.fillText("Portaat",128,400-15);
+        ctx.fillText("Askelmia "+n+" pcs",128,400-35);
+        ctx.fillText("Nousu "+nousu+"mm  Etenemä "+ete+"mm",128,400-55);
       }
       // Kaidepiirto
       ctx.strokeStyle="blue"; ctx.lineWidth=4;
@@ -186,14 +221,15 @@
       ctx.beginPath();
       handrail.forEach((pt,i)=>i==0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
       ctx.stroke();
+      document.getElementById('lengths').innerHTML = 
+        "<b>Kaidepiirtopisteitä:</b> " + railing.length +
+        "  | <b>Käsijohteen piirtopisteitä:</b> " + handrail.length;
     }
-    // automaattinen redraw
-    ['terassiLeveys','terassiPituus','porrasNousu','porrasEtenema','porrasAskelma','pohjaValinta'].forEach(id=>{
-      document.getElementById(id).oninput = draw;
+    ['terassiLeveys','terassiPituus','terassiKorkeus','porrasNousu','porrasEtenema','porrasAskelma','pohjaValinta'].forEach(id=>{
+      document.getElementById(id).oninput = function(){ draw(); updatePrice(); };
     });
     draw();
 
-    // Materiaalilogiiikka (käsijohde ulos = rst)
     document.getElementById('handrailOutdoor').onchange=function(){
       if(this.value=="kyllä"){
         document.getElementById('handrailMat').value="harjattu_rst";
@@ -201,9 +237,9 @@
       }else{
         document.getElementById('handrailMat').disabled = false;
       }
+      updatePrice();
     };
 
-    // Liitetiedostot
     document.getElementById('attachments').addEventListener('change',function(e){
       const files=[...e.target.files];
       let ul = files.map(f=>`<span class="file-label">${f.name}</span>`).join("");
@@ -214,10 +250,110 @@
       document.getElementById('customMaterial').style.display=(e.target.value=='muu')?'inline-block':'none';
     };
 
-    // Lomakkeen lähetys (demo)
+    /* ----------- Hinta-arvio ----------- */
+    function updatePrice() {
+      // Arvioidaan kaide- ja käsijohteen metrimäärät:
+      let kaide_m = railing.length? railing.length : 0; // DEMO: jokainen piirtopiste = 1m
+      let handrail_m = handrail.length? handrail.length : 0;
+      let kaidetyyppi = document.getElementById('kaidetyyppi').value;
+      let kaytto = document.getElementById('handrailOutdoor').value=="kyllä" ? "ulkona" : "sisä";
+      // Kaidehinnat
+      let kaide_hinta = 0;
+      if(kaidetyyppi=="pinnakaide" && kaytto=="sisä") kaide_hinta = 230*kaide_m;
+      if(kaidetyyppi=="lattakaide" && kaytto=="sisä") kaide_hinta = 350*kaide_m;
+      if(kaidetyyppi=="pinnakaide" && kaytto=="ulkona") kaide_hinta = 290*kaide_m;
+      if(kaidetyyppi=="lattakaide" && kaytto=="ulkona") kaide_hinta = 440*kaide_m;
+
+      // Käsijohteen maalauksen hinta
+      let handrail_paint = 8*handrail_m;
+      let handrail_mat = document.getElementById('handrailMat').value;
+      let teras_kj = 5*handrail_m;
+      let rst_kj = 9*handrail_m;
+      let handrail_cost = (handrail_mat=="mustateräs"?teras_kj:rst_kj) + handrail_paint;
+
+      // Asennusvalinta ja hinnat
+      let asennus_tyyp = document.getElementById('deliveryType').value;
+      let asennus_kaide = 0, asennus_handrail = 0;
+      if(asennus_tyyp=="asennus"){
+        if(kaidetyyppi=="pinnakaide") asennus_kaide = 45*kaide_m;
+        if(kaidetyyppi=="lattakaide") asennus_kaide = 65*kaide_m;
+        asennus_handrail = 40*handrail_m;
+      }
+
+      // Toimitus (KM-valinta) – pyydetään käyttäjältä etäisyys kenttään
+      let km = parseFloat(document.getElementById('etaisyys').value)||0;
+      let toimitus = 0, toimitusteksti="";
+      if(asennus_tyyp=="asennus"){
+        toimitus = 80 + 2.8*km;
+        toimitusteksti = "Asennuksen toimitus: 80€ + 2,8€/km ("+km+" km)";
+      }
+      else if(asennus_tyyp=="toimitus"){
+        toimitus = 90 + 3.5*km;
+        toimitusteksti = "Työmaatoimitus: 90€ + 3,5€/km ("+km+" km)";
+      }
+      else toimitusteksti = "Ei toimituskuluja (nouto)";
+
+      // YHTEENSÄ
+      let yht = kaide_hinta + handrail_cost + asennus_kaide + asennus_handrail + toimitus;
+
+      document.getElementById('price-box').innerHTML = 
+        "<b>ARVIOITU HINTA (demo):</b>"+
+        "<br>- Kaide ("+kaidetyyppi+", "+kaytto+"): "+kaide_hinta.toFixed(2)+" €"+
+        "<br>- Käsijohde: "+handrail_cost.toFixed(2)+" € (materiaali "+(handrail_mat=="mustateräs"?"Mustateräs":"RST")+", maalaus "+handrail_paint.toFixed(2)+" €)"+
+        "<br>- Asennustyö: "+(asennus_kaide+asennus_handrail).toFixed(2)+" €"+
+        "<br>- "+toimitusteksti+": "+toimitus.toFixed(2)+" €"+
+        "<br>-------------------------------------"+
+        "<br><b>Yhteensä: "+yht.toFixed(2)+" € + alv 0</b>";
+    }
+
+    ["handrailMat","handrailOutdoor","drawRailing","drawHandrail","kaidetyyppi","deliveryType","etaisyys"].forEach(id=>{
+      let el=document.getElementById(id);
+      el.onchange=updatePrice;
+      el.onclick=updatePrice;
+    });
+    canvas.onmouseup = updatePrice;
+    updatePrice();
+
+    /* ----------- Demo-3D mallinnus ------------ */
+    let three_ready=false;
+    document.getElementById('preview3d').onclick=function(){
+      if(three_ready) return;
+      const script=document.createElement('script');
+      script.src="https://unpkg.com/three@0.140.0/build/three.min.js";
+      script.onload=showKaide3d;
+      document.body.appendChild(script);
+    };
+    function showKaide3d() {
+      three_ready=true;
+      let canvas=document.getElementById('three-canvas');
+      let renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+      renderer.setClearColor(0xe6e9ef);
+
+      let scene = new THREE.Scene();
+      let camera = new THREE.PerspectiveCamera(45, 600/320, 0.1, 1000);
+      camera.position.set(2,1.2,5);
+
+      let ambientLight = new THREE.AmbientLight(0xffffff,1.2);
+      scene.add(ambientLight);
+
+      // Kaide 3D (pinnakaide demona)
+      let height=1.0, width=2.4, numPinnat=Math.round(width/0.13);
+      const lattaGeo=new THREE.BoxGeometry(width,0.04,0.006);
+      const lattaMat=new THREE.MeshStandardMaterial({color:0x333333});
+      let ylatanko=new THREE.Mesh(lattaGeo, lattaMat);
+      ylatanko.position.set(0,height,0); scene.add(ylatanko);
+      let alatanko=new THREE.Mesh(lattaGeo, lattaMat);
+      alatanko.position.set(0,0,0); scene.add(alatanko);
+      const pinnaGeo=new THREE.CylinderGeometry(0.012,0.012,height,16);
+      for(let i=0;i<numPinnat;i++) {
+        let x=-width/2+0.06+i*0.13;
+        let pinna=new THREE.Mesh(pinnaGeo, lattaMat);
+        pinna.position.set(x,height/2,0); scene.add(pinna);
+      }
+      renderer.render(scene,camera);
+    }
     document.getElementById('quotationForm').onsubmit = function(e){
       e.preventDefault();
-      // ...tallennuslogiikka tänne...
       document.getElementById('msg').textContent = "Kiitos tarjouspyynnöstä! (Demo)";
       setTimeout(()=>document.getElementById('msg').textContent="",4000);
     };
