@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Kymppikaide – Konfiguraattoridemo</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:650px; margin:18px auto; }
+    h2 { margin-top:0; }
+    canvas { border: 1px solid #888; }
+    label { font-size:0.98em; }
+    .row { margin-bottom: 10px; }
+    .msg { color: green; font-weight:bold }
+    ul{font-size:0.92em;}
+  </style>
+</head>
+<body>
+  <h2>Kymppikaide – Tarjouskonfiguraattori</h2>
+  <p>Piirrä haluamasi kaiteen ja käsijohteen muodot! Kaiteen pituus (sininen), käsijohteen pituus (punainen).</p>
+  <canvas id="canvas" width="500" height="300"></canvas>
+  <div style="margin:10px 0;">
+    <b>Kaiteen pituus:</b> <span id="railingLength">0.00</span> m &nbsp;&nbsp;
+    <b>Käsijohteen pituus:</b> <span id="handrailLength">0.00</span> m
+  </div>
+
+  <form id="quotationForm">
+    <h3>Pakolliset yhteystiedot</h3>
+    <div class="row"><input name="nimi" required placeholder="Nimi" style="width:98%"></div>
+    <div class="row"><input name="osoite" required placeholder="Osoite" style="width:98%"></div>
+    <div class="row"><input name="puhelin" required placeholder="Puhelinnumero" style="width:98%"></div>
+    <div class="row"><input name="email" type="email" required placeholder="Sähköposti" style="width:98%"></div>
+    <div class="row">
+      <b>Toimitustapa:</b><br>
+      <label><input type="radio" name="toimitus" value="asennus" checked> Kaiteet asennettuna (vain PK-seutu)</label><br>
+      <label><input type="radio" name="toimitus" value="tarvike"> Tarviketoimitus (itseasennettavaksi)</label>
+    </div>
+    <div class="row">
+      <button type="submit" style="font-size:1.05em;">Lähetä tarjouspyyntö</button>
+    </div>
+    <div id="msg" class="msg"></div>
+  </form>
+
+  <ul>
+    <li><b>Napsauta canvasia</b> piirtääksesi pisteitä kaiteeseen (sininen) tai käsijohteeseen (punainen)</li>
+    <li><b>Oikea klikkaus</b> vaihtaa piirrettävää kerrosta (kaide/käsijohde)</li>
+    <li><b>Pyyhki kaikki</b> (refresh) saadaksesi uuden piirron</li>
+    <li><b>Täytä yhteystiedot</b> ennen lähetystä!</li>
+  </ul>
+
+  <script>
+    // Piirtäjä: Sininen = kaide, punainen = käsijohde
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let railing = [];
+    let handrail = [];
+    let drawing = false;
+    let currentLayer = 'railing';
+
+    function dist(a, b) {
+      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2) / 50; // px -> m
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineCap = 'round';
+      // Kaide (sininen)
+      if (railing.length) {
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        railing.forEach((pt,i) => i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+        ctx.stroke();
+      }
+      // Käsijohde (punainen)
+      if (handrail.length) {
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        handrail.forEach((pt,i) => i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+        ctx.stroke();
+      }
+    }
+    canvas.addEventListener('mousedown', e => {
+      const pt = { x: e.offsetX, y: e.offsetY };
+      if (currentLayer === 'railing') railing.push(pt);
+      else handrail.push(pt);
+      draw(); updateLengths();
+    });
+    canvas.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      currentLayer = currentLayer === 'railing' ? 'handrail' : 'railing';
+      alert(currentLayer==='railing'?"Piirrä kaidetta (sininen)":"Piirrä käsijohdetta (punainen)");
+    });
+    function updateLengths() {
+      let rLen = 0, hLen = 0;
+      for (let i = 1; i < railing.length; i++) rLen += dist(railing[i - 1], railing[i]);
+      for (let i = 1; i < handrail.length; i++) hLen += dist(handrail[i - 1], handrail[i]);
+      document.getElementById('railingLength').textContent = rLen.toFixed(2);
+      document.getElementById('handrailLength').textContent = hLen.toFixed(2);
+    }
+
+    // Lomakkeen lähetys (demo-versio)
+    document.getElementById('quotationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      let data = {};
+      for (const [k, v] of fd.entries()) data[k] = v;
+      data.railingLength = document.getElementById('railingLength').textContent;
+      data.handrailLength = document.getElementById('handrailLength').textContent;
+      data.railingData = railing;
+      data.handrailData = handrail;
+      document.getElementById('msg').textContent = 
+        "Kiitos tarjouspyynnöstä! (Demo: ilmoitus vain tähän, backend-toteutus myöhemmin)";
+      // Voit lähettää datan API:han näin:
+      // fetch('https://oma-backendi-url.fi/api/quotation', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      // Toista: Lisää backend myöhemmin!
+      setTimeout(()=>document.getElementById('msg').textContent="",4000);
+    });
+  </script>
+</body>
+</html>
