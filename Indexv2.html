@@ -2,28 +2,19 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Ammattimainen Kaidekonfiguraattori</title>
+  <title>Kaidemallinnus AI-tuella</title>
   <link rel="stylesheet" href="style.css">
-  <!-- THREE.js CDN, voit liittää myöhemmin myös pdf.js ja konva/fabric tukea -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/three@0.140.0/build/three.min.js"></script>
 </head>
 <body>
-  <h2>Kymppikaide – konfiguraattori DEMO</h2>
-  <div id="config-section"></div>
-  <div id="draw-section"></div>
-  <div id="price-section"></div>
-  <div id="preview3d-section"></div>
-  <script src="config.js"></script>
-  <script src="drawing.js"></script>
-  <script src="threeview.js"></script>
-  <script src="pricecalc.js"></script>
-  <!-- UI:n liitos -->
-  <script>
-    // --- UI initialisointi ---
-    window.initConfig();
-    window.initDrawing();
-    window.updatePrice();
-    window.init3DPreview();
-  </script>
+  <h2>Kaidemallinnus AI-taustapalvelulla</h2>
+  <input type="file" id="pdflataus" multiple accept="application/pdf">
+  <div id="pdf-esikatselu"></div>
+  <div id="kaide-edit"></div>
+  <div id="pricebox"></div>
+  <button id="preview-3d">Näytä 3D-esikatselu</button>
+  <canvas id="three-canvas" width="700" height="350"></canvas>
+  <script src="app.js"></script>
 </body>
 </html>
