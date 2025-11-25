@@ -4,55 +4,51 @@
   <meta charset="UTF-8">
   <title>Kymppikaide – Konfiguraattori</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width:780px; margin:20px auto;}
-    canvas {border: 1px solid #888;}
-    #three-canvas { border:1px solid #666; margin-top:10px; border-radius:4px; background: #e6e9ef;}
+    body { font-family: Arial, sans-serif; max-width:900px; margin:20px auto;}
     .row, .row2 {margin-bottom:15px;}
     .row2 {margin-top:7px;}
-    .config-section {background:#f6f6f6; border:1px solid #e0e0e0; border-radius:7px; padding:15px; margin-bottom:15px;}
+    .config-section, .draw-section {background:#f6f6f6; border:1px solid #e0e0e0; border-radius:7px; padding:15px; margin-bottom:15px;}
     .msg {color:green; font-weight:bold;}
-    .file-label {margin-right:12px;}
-    .info {font-size:0.97em; margin-bottom:14px;}
+    .toolbar {margin-bottom: 10px;}
+    .toolbar button {margin-right:6px; font-size:1em; padding:6px 12px; border-radius:4px;}
+    .toolbar .active {background:#e0eafc;}
+    canvas {border: 1px solid #888; background:#fff;}
+    .file-label{margin-right:12px;}
+    .info{font-size:0.97em; margin-bottom:14px;}
   </style>
 </head>
 <body>
   <h2>Kymppikaide – konfiguraattori</h2>
-  <div class="config-section">
-    <div class="row">
-      <b>Kaidemalli:</b>
-      <select id="kaidetyyppi"></select>
+  <!-- Piirtoalusta pohjavalinnoilla -->
+  <div class="draw-section">
+    <b>Piirrettävän pohjan tyyppi:</b>
+    <select id="pohjaValinta">
+      <option value="terassi">Terassi</option>
+      <option value="porras">Porras</option>
+    </select>
+    <span id="terassiOptions">
+      Leveys: <input type="number" id="terassiLeveys" value="3.0" step="0.01" min="1.0" max="10.0" style="width:60px;"> m
+      Pituus: <input type="number" id="terassiPituus" value="5.5" step="0.01" min="1.0" max="20.0" style="width:60px;"> m
+    </span>
+    <span id="porrasOptions" style="display:none">
+      Nousu: <input type="number" id="porrasNousu" value="180" step="1" min="80" max="250" style="width:50px;"> mm
+      Etenemä: <input type="number" id="porrasEtenema" value="260" step="1" min="150" max="350" style="width:50px;"> mm
+      Askelmien määrä: <input type="number" id="porrasAskelma" value="7" step="1" min="2" max="30" style="width:45px;">
+    </span>
+    <div class="toolbar">
+      <button id="drawRailing" class="active">Piirrä kaidetta</button>
+      <button id="drawHandrail">Piirrä käsijohdetta</button>
+      <button id="finishDraw">Lopeta piirto</button>
+      <button id="cutLine">Leikkaa (sakset)</button>
+      <button id="undoDraw">Undo viimeisin</button>
     </div>
-    <div class="row">
-      <b>Kaiteen korkeus:</b>
-      <select id="kaideKorkeus"></select>
-      <input id="customKorkeus" type="number" step="0.01" min="0.8" max="2" placeholder="Syötä korkeus (m)" style="display:none; width:90px;">
-    </div>
-    <div class="row">
-      <b>Käyttökohde:</b>
-      <select id="kaytto"></select>
-      <span id="zincLabel" style="color:#0a7;">Sinkitys lisätään automaattisesti ulkokäytössä.</span>
-    </div>
-    <div class="row">
-      <b>Väri:</b>
-      <select id="color"></select>
-      <span id="colorPreview" style="display:inline-block;width:24px;height:17px;margin-left:12px;border:1px solid #888"></span>
-    </div>
-    <div class="row">
-      <b>Kiinnitysmateriaali:</b>
-      <select id="material"></select>
-      <input id="customMaterial" type="text" placeholder="Muu materiaali" style="display:none;width:120px;">
-    </div>
+    <canvas id="canvas" width="820" height="400"></canvas>
   </div>
+
   <div class="row2 info">
     <b>Voit liittää PDF- ja kuvatiedostoja tarjouspyyntöön.</b>
     <input type="file" id="attachments" multiple>
     <span id="fileList"></span>
-  </div>
-  <div class="row2">
-    <button id="preview3d">Näytä 3D-esikatselu</button>
-  </div>
-  <div id="three-area">
-    <canvas id="three-canvas" width="600" height="280"></canvas>
   </div>
 
   <form id="quotationForm">
@@ -61,138 +57,170 @@
     <div class="row"><input name="osoite" required placeholder="Osoite" style="width:98%"></div>
     <div class="row"><input name="puhelin" required placeholder="Puhelinnumero" style="width:98%"></div>
     <div class="row"><input name="email" type="email" required placeholder="Sähköposti" style="width:98%"></div>
+    <h4>Kaidevalinnat</h4>
     <div class="row">
-      <b>Toimitustapa:</b>
-      <label><input type="radio" name="toimitus" value="asennus" checked>Asennus (PK-seutu)</label>
-      <label><input type="radio" name="toimitus" value="tarvike">Tarviketoimitus</label>
+      <b>Kiinnitysmateriaali:</b>
+      <select id="material">
+        <option value="betoni">Betoni</option>
+        <option value="puu">Puu</option>
+        <option value="muu">Muu</option>
+      </select>
+      <input id="customMaterial" type="text" placeholder="Muu" style="display:none;width:120px;">
+    </div>
+    <div class="row">
+      <b>Kaiteen väri:</b>
+      <select id="color">
+        <option value="RAL9005">Musta (RAL9005)</option>
+        <option value="RAL9010">Valkoinen (RAL9010)</option>
+        <option value="RAL7024">Tumman harmaa (RAL7024)</option>
+        <option value="RAL7040">Vaalean harmaa (RAL7040)</option>
+      </select>
+    </div>
+    <div class="row">
+      <b>Kaiteen malli:</b>
+      <select id="kaidetyyppi">
+        <option value="pinnakaide">Pinnakaide</option>
+        <option value="lattakaide">Lattakaide</option>
+      </select>
+    </div>
+    <h4>Käsijohdevalinnat</h4>
+    <div class="row">
+      <b>Käsijohteen materiaali:</b>
+      <select id="handrailMat">
+        <option value="mustateräs">Mustateräs</option>
+        <option value="harjattu_rst">Harjattu RST</option>
+      </select>
+      <span>
+        Tuleeko käsijohde ulos?
+        <select id="handrailOutdoor">
+          <option value="ei">Ei</option>
+          <option value="kyllä">Kyllä</option>
+        </select>
+      </span>
+    </div>
+    <div class="row">
+      <b>Käsijohteen väri:</b>
+      <select id="handrailColor">
+        <option value="RAL9005">Musta (RAL9005)</option>
+        <option value="RAL9010">Valkoinen (RAL9010)</option>
+        <option value="RAL7024">Tumman harmaa (RAL7024)</option>
+        <option value="RAL7040">Vaalean harmaa (RAL7040)</option>
+      </select>
     </div>
     <div class="row"><button type="submit" style="font-size:1.05em;">Lähetä tarjouspyyntö</button>
     <span id="msg" class="msg"></span>
     </div>
   </form>
 
-  <script type="module">
-    import { KAIDEMALLIT, KORKEUDET, VARIT, KAYTTO, KIINNITYS, validateFileType, needsZinc, mallidata } from './config.js';
+  <script>
+    // Pohjan valinta logiikka
+    document.getElementById('pohjaValinta').onchange = function() {
+      let tyyppi = this.value;
+      document.getElementById('terassiOptions').style.display = tyyppi === 'terassi' ? 'inline' : 'none';
+      document.getElementById('porrasOptions').style.display = tyyppi === 'porras' ? 'inline' : 'none';
+    };
 
-    // --- Valintojen täyttö ---
-    function fillSelect(id, items, labelProp="label") {
-      const sel=document.getElementById(id);
-      items.forEach(val=>{
-        let opt=document.createElement('option');
-        opt.value=val.id || val;
-        opt.innerText=val[labelProp]||val;
-        sel.appendChild(opt);
-      });
+    // Canvas-koodissa: tilan vaihto napista
+    let mode = 'railing', drawing=false;
+    let railing = [], handrail = [];
+    let undoStack = [];
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('drawRailing').classList.toggle('active', m=='railing');
+      document.getElementById('drawHandrail').classList.toggle('active', m=='handrail');
     }
-    fillSelect("kaidetyyppi", KAIDEMALLIT, "label");
-    fillSelect("kaideKorkeus", KORKEUDET);
-    fillSelect("color", VARIT, "label");
-    fillSelect("kaytto", KAYTTO);
-    fillSelect("material", KIINNITYS);
+    document.getElementById('drawRailing').onclick = ()=>setMode('railing');
+    document.getElementById('drawHandrail').onclick = ()=>setMode('handrail');
+    document.getElementById('finishDraw').onclick = ()=>drawing=false;
 
-    // Väri preview
-    function updateColor() {
-      let c=document.getElementById('color').value;
-      let val=VARIT.find(v=>v.id===c)?.code || "#222";
-      document.getElementById('colorPreview').style.background=val;
+    document.getElementById('undoDraw').onclick = function() {
+      if(mode=='railing' && railing.length>0) { undoStack.push(railing.pop()); }
+      if(mode=='handrail' && handrail.length>0) { undoStack.push(handrail.pop()); }
+      draw();
+    };
+
+    document.getElementById('cutLine').onclick = function(){
+      if(mode=='railing' && railing.length>0) { railing.pop(); }
+      if(mode=='handrail' && handrail.length>0) { handrail.pop(); }
+      draw();
+    };
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.onmousedown = function(e){
+      let pt = {x: e.offsetX, y: e.offsetY};
+      drawing = true;
+      if(mode=='railing') railing.push(pt);
+      else handrail.push(pt);
+      draw();
+    };
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // pohja: terassi/porras
+      let tyyppi = document.getElementById('pohjaValinta').value;
+      if(tyyppi=='terassi'){
+        let w=parseFloat(document.getElementById('terassiLeveys').value), h=parseFloat(document.getElementById('terassiPituus').value);
+        ctx.strokeStyle="#d3c551"; ctx.lineWidth=2; ctx.strokeRect(60,60,w*70,h*30); // skaalataan demoarvoilla
+      } else if(tyyppi=='porras') {
+        let nousu=parseInt(document.getElementById('porrasNousu').value), ete=parseInt(document.getElementById('porrasEtenema').value), n=parseInt(document.getElementById('porrasAskelma').value);
+        ctx.strokeStyle="#c7914d"; ctx.lineWidth=2;
+        let x=60, y=320;
+        for(let i=0; i<n; i++){
+          ctx.beginPath();
+          ctx.moveTo(x,y);
+          y -= nousu/2; x += ete/2; // Demo skaalaus!
+          ctx.lineTo(x,y);
+          ctx.stroke();
+        }
+      }
+      // Kaidepiirto
+      ctx.strokeStyle="blue"; ctx.lineWidth=4;
+      ctx.beginPath();
+      railing.forEach((pt,i)=>i==0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+      ctx.stroke();
+      // Käsijohde
+      ctx.strokeStyle="red"; ctx.lineWidth=2;
+      ctx.beginPath();
+      handrail.forEach((pt,i)=>i==0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
+      ctx.stroke();
     }
-    document.getElementById('color').addEventListener('change', updateColor);
-    updateColor();
-
-    // Korkeuden manuaalinen syöttö
-    document.getElementById('kaideKorkeus').addEventListener('change', function(e){
-      document.getElementById('customKorkeus').style.display = (e.target.value === 'muu') ? 'inline-block' : 'none';
+    // automaattinen redraw
+    ['terassiLeveys','terassiPituus','porrasNousu','porrasEtenema','porrasAskelma','pohjaValinta'].forEach(id=>{
+      document.getElementById(id).oninput = draw;
     });
-    document.getElementById('material').addEventListener('change', (e)=>{
-      document.getElementById('customMaterial').style.display=(e.target.value==='muu')?'inline-block':'none';
-    });
+    draw();
 
-    // Sinkitys automaattisesti ulkokäytössä
-    function updateZinc() {
-      document.getElementById('zincLabel').style.display = (document.getElementById('kaytto').value==='ulkona')?"inline":"none";
-    }
-    document.getElementById('kaytto').addEventListener('change', updateZinc);
-    updateZinc();
+    // Materiaalilogiiikka (käsijohde ulos = rst)
+    document.getElementById('handrailOutdoor').onchange=function(){
+      if(this.value=="kyllä"){
+        document.getElementById('handrailMat').value="harjattu_rst";
+        document.getElementById('handrailMat').disabled = true;
+      }else{
+        document.getElementById('handrailMat').disabled = false;
+      }
+    };
 
-    // PDF/kuvaliitteet
+    // Liitetiedostot
     document.getElementById('attachments').addEventListener('change',function(e){
       const files=[...e.target.files];
-      let ul = files.map(f => validateFileType(f.name)?`<span class="file-label">${f.name}</span>`:`<span style="color:red">${f.name} (tiedostotyyppi ei tuettu)</span>`).join("");
+      let ul = files.map(f=>`<span class="file-label">${f.name}</span>`).join("");
       document.getElementById('fileList').innerHTML = ul;
     });
 
-    // Lomakkeen lähetys
-    document.getElementById('quotationForm').addEventListener('submit', function(e){
-      e.preventDefault();
-      let fd = new FormData(e.target);
-      let data={};
-      for(const [k,v] of fd.entries()) data[k]=v;
-      let kork=document.getElementById('kaideKorkeus').value;
-      if(kork==='muu') kork=document.getElementById('customKorkeus').value;
-      data.kaidetyyppi=document.getElementById('kaidetyyppi').value;
-      data.kaideKorkeus=kork;
-      data.color=document.getElementById('color').value;
-      data.material=document.getElementById('material').value==='muu'?document.getElementById('customMaterial').value:document.getElementById('material').value;
-      data.kaytto=document.getElementById('kaytto').value;
-      data.sinkitys=needsZinc(data.kaytto);
-      data.attachments=[...document.getElementById('attachments').files].map(f=>f.name);
-      document.getElementById('msg').textContent = "Kiitos tarjouspyynnöstä! (Demo)";
-      setTimeout(()=>{document.getElementById('msg').textContent=""}, 3500);
-    });
-
-    // ------ 3D-esikatselu pinnakaiteesta (THREE.js mock) ------
-    let three_ready=false;
-    document.getElementById('preview3d').onclick=function(){
-      if(three_ready) return;
-      const script=document.createElement('script');
-      script.src="https://unpkg.com/three@0.140.0/build/three.min.js";
-      script.onload=showKaide3d;
-      document.body.appendChild(script);
+    document.getElementById('material').onchange = function(e){
+      document.getElementById('customMaterial').style.display=(e.target.value=='muu')?'inline-block':'none';
     };
 
-    function showKaide3d() {
-      three_ready=true;
-      let canvas=document.getElementById('three-canvas');
-      let renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-      renderer.setClearColor(0xe6e9ef);
-
-      let scene = new THREE.Scene();
-      let camera = new THREE.PerspectiveCamera(45, 600/280, 0.1, 1000);
-      camera.position.set(2,1.2,5);
-
-      let ambientLight = new THREE.AmbientLight(0xffffff,1.2);
-      scene.add(ambientLight);
-
-      // Mallin parametrit
-      let malli_id=document.getElementById('kaidetyyppi').value;
-      let model=mallidata(malli_id);
-      let height=parseFloat(document.getElementById('kaideKorkeus').value==='muu'?document.getElementById('customKorkeus').value:document.getElementById('kaideKorkeus').value)||1.0;
-      let width=2.4; // Demo-kaideleveys (voit vaihtaa frontista)
-      let numPinnat=Math.round(width/0.13); // Pinnaväli n. 13cm
-
-      // Ylä-/alalatta
-      const lattaGeo=new THREE.BoxGeometry(width,0.04,0.006);
-      const lattaMat=new THREE.MeshStandardMaterial({color:0x333333});
-      let ylatanko=new THREE.Mesh(lattaGeo, lattaMat);
-      ylatanko.position.set(0, height, 0);
-      scene.add(ylatanko);
-
-      let alatanko=new THREE.Mesh(lattaGeo, lattaMat);
-      alatanko.position.set(0,0,0);
-      scene.add(alatanko);
-
-      // Pystypinnat
-      const pinnaGeo=new THREE.CylinderGeometry(0.012,0.012,height,16);
-      for(let i=0;i<numPinnat;i++) {
-        let x=-width/2+0.06+i*0.13;
-        let pinna=new THREE.Mesh(pinnaGeo, lattaMat);
-        pinna.position.set(x,height/2,0);
-        scene.add(pinna);
-      }
-
-      renderer.render(scene,camera);
-    }
-    // ----------- HUOMIO! config.js sisältää ylläpidettävät asetukset -----------
+    // Lomakkeen lähetys (demo)
+    document.getElementById('quotationForm').onsubmit = function(e){
+      e.preventDefault();
+      // ...tallennuslogiikka tänne...
+      document.getElementById('msg').textContent = "Kiitos tarjouspyynnöstä! (Demo)";
+      setTimeout(()=>document.getElementById('msg').textContent="",4000);
+    };
   </script>
 </body>
 </html>
