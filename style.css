@@ -1,0 +1,11 @@
+body { font-family: Arial, sans-serif; max-width:1000px; margin:20px auto;}
+h2 {margin-bottom:18px;}
+label, select, input { font-size:1em;}
+canvas {border: 1px solid #88a; background:#f9f9ff;}
+.uirow {margin-bottom:10px;}
+#draw-canvas {display:block; margin:auto;}
+.buttonrow {margin:8px 0;}
+.buttonrow button {padding:7px 21px; border-radius:4px; font-size:1em; margin-right:8px;}
+.pricebox {background:#e8ffe8; border:1px solid #b5dbb0; border-radius:5px; padding:10px; font-size:1.1em; margin-bottom:15px;}
+#preview3d-canvas {display:block; margin:auto; border:1px solid #bbb; background:#f0f3fc;}
+input[type="file"] {margin-top:8px;}
