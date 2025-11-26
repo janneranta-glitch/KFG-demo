@@ -2,110 +2,64 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kymppikaide | Automatisoitu tarjouslaskuri</title>
+  <title>Kymppikaide | Automatisoitu Kaidelaskuri</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Fontit: Raleway -->
   <link href="https://fonts.googleapis.com/css?family=Raleway:400,700,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <header class="header">
-    <img src="logo_kymppikaide.png" alt="Kymppikaide logo" class="logo">
-    <h1 class="otsikko">AUTOMATISOITU TARJOUSLASKURI</h1>
+  <header>
+    <img src="logo_kymppikaide.png" class="logo" alt="Kymppikaide logo">
+    <h1>Kymppikaide – Automatisoitu tarjouslaskuri</h1>
   </header>
-  <main class="container">
-    <section class="ingressi">
-      <p><b>Kymppikaide automatisoi kaidelaskennan ja -tarjouspyynnöt helposti suoraan piirroksesta.</b></p>
-    </section>
-    <section class="ohje">
-      <h2 class="väliotsikko">Käyttöohje</h2>
+  <main>
+    <section id="instructions" class="ingressi">
+      <p><b>Kymppikaide automatisoi kaidelaskennan ja -tarjouspyynnöt.</b></p>
       <ol>
-        <li>Lataa PDF-/kuvatiedosto</li>
-        <li>Määritä mittasuhde (esim. 1:10 / 1:50) ja kalibroi mittakaava</li>
-        <li>Lisää kaide- ja käsijohdemitat AI-analyysin perusteella <br><span class="mobirefl">(tai manuaalisesti napilla – toimii mobiilissa!)</span></li>
+        <li>Lataa PDF-/kuvatiedosto, valitse mittasuhde</li>
+        <li>Kalibroi mittakaava</li>
+        <li>Mittaa kaiteet ja käsijohteet piirroksesta tai täytä kenttiin</li>
         <li>Valitse tuotteet, pintakäsittely, asennus</li>
-        <li>Täytä yhteystiedot, tarkista hinta ja lähetä tarjous PDF-liitteellä</li>
+        <li>Täytä yhteystiedot (yritysvaihtoehdolla)</li>
+        <li>Tallenna/lähetä tarjous PDF:llä</li>
       </ol>
     </section>
-
-    <section id="pdfControls" class="controls">
+    <section id="pdfControls">
       <input type="file" id="fileinput" multiple accept=".pdf,.jpg,.png">
-      <div class="ctrl-row">
-        <button id="pdfPrev">Edellinen</button>
-        <button id="pdfNext">Seuraava</button>
-        <button id="zoomIn">Zoom +</button>
-        <button id="zoomOut">Zoom -</button>
-      </div>
-      <div class="ctrl-row" style="margin-top:4px;">
-        Mittasuhde (esim 1:50): <input id="mittasuhdekentta" type="text" value="1:50" style="width:60px;">
-        <button id="setScaleBtn">Kalibroi mittakaava</button>
-      </div>
-      <div class="ctrl-row" style="margin-top:4px;">
-        <button id="addKaideMeasure">Kaidemittaviiva</button>
-        <button id="addHandrailMeasure">Käsijohdemittaviiva</button>
-        <button id="clearMeasures">Tyhjennä merkinnät</button>
-      </div>
+      <button id="pdfPrev">Edellinen sivu</button>
+      <button id="pdfNext">Seuraava sivu</button>
+      <button id="zoomIn">Zoom +</button>
+      <button id="zoomOut">Zoom -</button>
+      <span>MittaSuhde:</span>
+      <input id="mittasuhdekentta" type="text" value="1:50" style="width:55px;">
+      <button id="setScaleBtn">Aseta mittakaava</button>
     </section>
-    <section class="canvaswrapper">
-      <div id="pdfCanvasArea" class="pdfcanvasarea"></div>
+    <section id="canvaswrapper">
+      <div id="pdfCanvasArea"></div>
+      <div id="aiLabel"></div>
+      <div id="measurements"></div>
+      <button id="addKaideMeasure">Kaidemittaviiva</button>
+      <button id="addHandrailMeasure">Käsijohdemittaviiva</button>
+      <button id="clearMeasures">Tyhjennä merkinnät</button>
     </section>
-    <section id="measureSummary" class="summarybox"></section>
-    <section id="measurements" class="mittalistabox"></section>
-
-    <section class="productform">
-      <h2 class="väliotsikko">Tuotevalinnat & pituudet</h2>
-      <div class="row">
-        <label>Tuote:</label>
-        <select id="productSelect">
-          <option value="pinnakaide">Pinnakaide</option>
-          <option value="lattakaide">Lattakaide</option>
-        </select>
-        <label>Pintakäsittely kaiteelle:</label>
-        <select id="kaideFinish">
-          <option value="maalaus">Maalaus</option>
-        </select>
-        <label>Pintakäsittely käsijohteelle:</label>
-        <select id="handrailFinish">
-          <option value="maalaus">Maalaus</option>
-          <option value="rst">RST</option>
-        </select>
-        <label>Asennus:</label>
-        <select id="installOption">
-          <option value="ei">Ei (vain toimitus)</option>
-          <option value="kyllä">Kyllä</option>
-        </select>
-        <label>Nousukaide?</label>
-        <select id="isStair">
-          <option value="ei">Tasokaide</option>
-          <option value="kyllä">Nousukaide</option>
-        </select>
-      </div>
-      <div class="row" style="margin:6px 0;">
-        <label>Pituudet (m):</label>
-        <input type="number" id="kaideLen" step="0.01" placeholder="Kaidepituus">
-        <input type="number" id="handLen" step="0.01" placeholder="Käsijohde">
-      </div>
+    <section id="measureSummary"></section>
+    <section id="productform"></section>
+    <section id="pricebox"></section>
+    <section id="contactform"></section>
+    <section>
+      <button id="sendOfferBtn">LÄHETÄ TARJOUS PDF</button>
     </section>
-    <section class="priceoutputbox">
-      <div id="pricebox"></div>
-    </section>
-    <section class="yhteystiedot">
-      <h2 class="väliotsikko">Yhteystiedot</h2>
-      <input type="text" id="contactName" placeholder="Nimi" required>
-      <input type="email" id="contactEmail" placeholder="Sähköposti" required>
-      <input type="tel" id="contactPhone" placeholder="Puhelin" required>
-      <input type="text" id="contactAddr" placeholder="Kohdeosoite" required>
-    </section>
-    <section class="tarjousbtnbox">
-      <button id="sendOfferBtn" class="tarjousbtn">LÄHETÄ TARJOUS PDF</button>
-    </section>
-    <footer class="yritystiedot">
-      <img src="logo_kymppikaide.png" width="44" style="vertical-align:middle; margin-right:8px;">
-      <span><b>Kymppikaide Oy</b> | Y-tunnus: 1234567-0 | info@kymppikaide.fi | 040 123 4567 | Lammaskallionkatu 8, Kerava</span>
+    <footer id="yritystiedot">
+      <img src="logo_kymppikaide.png" width="34" style="vertical-align:middle; margin-right:8px;">
+      <span>Kymppikaide Oy | Y-tunnus: 1234567-0 | info@kymppikaide.fi | 040 123 4567 | Lammaskallionkatu 8, Kerava</span>
     </footer>
   </main>
   <script src="app.js"></script>
+  <script src="ai.js"></script>
+  <script src="mittaus.js"></script>
+  <script src="pricecalc.js"></script>
+  <script src="offerpdf.js"></script>
 </body>
 </html>
