@@ -2,9 +2,8 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kaidemallinnus AI-taustapalvelulla</title>
+  <title>Kaidemallinnus AI:lla – Drag/Zoom/3D</title>
   <link rel="stylesheet" href="style.css">
-  <!-- pdf.js ja THREE.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/three@0.140.0/build/three.min.js"></script>
 </head>
@@ -18,12 +17,17 @@
     <button id="zoomIn">Zoom +</button>
     <button id="zoomOut">Zoom -</button>
   </div>
-  <div id="canvasArea" style="border:1px solid #ccc;height:440px;width:800px;position:relative;margin-bottom:12px;"></div>
+  <div id="canvasArea" style="position:relative;width:800px;height:440px;overflow:hidden;background:#fbfbff;border:1px solid #ccc"></div>
   <div id="measurements"></div>
+  <div>
+    <button id="addMeasure" class="measure-nappi">Lisää mittaviiva</button>
+    <button id="deleteMeasure" class="measure-nappi">Poista viimeinen mitta</button>
+    <button id="clearMeasures" class="measure-nappi">Tyhjennä mitat</button>
+  </div>
   <div id="configSection"></div>
   <div id="pricebox"></div>
   <button id="preview-3d">Näytä 3D-esikatselu</button>
-  <canvas id="three-canvas" width="700" height="350"></canvas>
+  <div style="border:1px solid #bbb;width:700px;margin:auto;"><canvas id="three-canvas" width="700" height="350"></canvas></div>
   <script src="app.js"></script>
 </body>
 </html>
