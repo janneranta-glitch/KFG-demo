@@ -2,32 +2,49 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kaidemallinnus AI:lla – Drag/Zoom/3D</title>
+  <title>Kymppikaide – Automatisoitu tarjouslaskuri</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://unpkg.com/three@0.140.0/build/three.min.js"></script>
 </head>
 <body>
-  <h2>Kaidemallinnus AI-taustapalvelulla</h2>
-  <input type="file" id="fileinput" multiple accept=".pdf,.jpg,.jpeg,.png">
-  <div>
-    <button id="prevPage">◀</button>
-    <span id="pageLabel">–/–</span>
-    <button id="nextPage">▶</button>
-    <button id="zoomIn">Zoom +</button>
-    <button id="zoomOut">Zoom -</button>
+<div style="max-width:540px; margin:auto;">
+  <h2>Kymppikaide<br>Automatisoitu tarjouslaskuri</h2>
+  <label>Lataa PDF-/kuvatiedosto</label>
+  <input type="file" id="fileinput" accept=".pdf,.png,.jpg" multiple>
+  <div id="pdfCanvasArea" style="margin:10px 0; position:relative; width:520px; height:320px; border:1px solid #bbb; background:#fcfcfc;"></div>
+  <button id="setScaleBtn" style="margin:6px 0;">Aseta mittakaava (kalibroi)</button>
+  <div id="scaleForm" style="display:none;">
+    <label>Fyysinen pituus mittaviivalle (m):</label>
+    <input type="number" id="scaleMeters" step="0.01">
+    <button id="confirmScaleBtn">Vahvista mittakaava</button>
   </div>
-  <div id="canvasArea" style="position:relative;width:800px;height:440px;overflow:hidden;background:#fbfbff;border:1px solid #ccc"></div>
-  <div id="measurements"></div>
-  <div>
-    <button id="addMeasure" class="measure-nappi">Lisää mittaviiva</button>
-    <button id="deleteMeasure" class="measure-nappi">Poista viimeinen mitta</button>
-    <button id="clearMeasures" class="measure-nappi">Tyhjennä mitat</button>
+  <div style="margin:8px 0;">
+    <label>Valitse kaidetyyppi: </label>
+    <select id="kaidetyyppi">
+      <option value="pinnakaide">Pinnakaide</option>
+      <option value="lattakaide">Lattakaide</option>
+    </select>
+    <label>Pintakäsittely: </label>
+    <select id="pintakäsittely">
+      <option value="maalaus">Maalaus</option>
+      <option value="rst">RST</option>
+    </select>
+    <label>Nousukaide?</label>
+    <select id="nousukaide">
+      <option value="ei">Ei</option>
+      <option value="kyllä">Kyllä</option>
+    </select>
   </div>
-  <div id="configSection"></div>
-  <div id="pricebox"></div>
-  <button id="preview-3d">Näytä 3D-esikatselu</button>
-  <div style="border:1px solid #bbb;width:700px;margin:auto;"><canvas id="three-canvas" width="700" height="350"></canvas></div>
-  <script src="app.js"></script>
+  <div style="margin:8px 0;">
+    <label>Tasokaiteen pituus (m):</label>
+    <input type="number" id="tasokaide" step="0.01">
+    <label>Nousukaiteen pituus (m):</label>
+    <input type="number" id="nousukaidepn" step="0.01">
+    <label>Käsijohteen pituus (m):</label>
+    <input type="number" id="handrailpn" step="0.01">
+  </div>
+  <div id="tarjouslaatikko" style="margin:12px 0; background:#eef; padding:10px; border-radius:8px;"></div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
