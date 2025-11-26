@@ -2,16 +2,25 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kaidemallinnus AI-tuella</title>
+  <title>Kaidemallinnus AI-taustapalvelulla</title>
   <link rel="stylesheet" href="style.css">
+  <!-- pdf.js ja THREE.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/three@0.140.0/build/three.min.js"></script>
 </head>
 <body>
   <h2>Kaidemallinnus AI-taustapalvelulla</h2>
-  <input type="file" id="pdflataus" multiple accept="application/pdf">
-  <div id="pdf-esikatselu"></div>
-  <div id="kaide-edit"></div>
+  <input type="file" id="fileinput" multiple accept=".pdf,.jpg,.jpeg,.png">
+  <div>
+    <button id="prevPage">◀</button>
+    <span id="pageLabel">–/–</span>
+    <button id="nextPage">▶</button>
+    <button id="zoomIn">Zoom +</button>
+    <button id="zoomOut">Zoom -</button>
+  </div>
+  <div id="canvasArea" style="border:1px solid #ccc;height:440px;width:800px;position:relative;margin-bottom:12px;"></div>
+  <div id="measurements"></div>
+  <div id="configSection"></div>
   <div id="pricebox"></div>
   <button id="preview-3d">Näytä 3D-esikatselu</button>
   <canvas id="three-canvas" width="700" height="350"></canvas>
