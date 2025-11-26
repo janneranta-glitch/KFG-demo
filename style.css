@@ -1,11 +1,8 @@
-body { font-family: Arial,sans-serif; max-width:1100px; margin:18px auto; background:#fff;}
-h2 {margin-bottom:14px;}
-input, select, button {font-size:1em;}
-#canvasArea {background:#fcfcff;}
-.config-row {margin-bottom:9px;}
-.pricebox {background:#e8ffe8; border:1px solid #b5dbb0; border-radius:5px; padding:10px; font-size:1.1em; margin-bottom:15px;}
-#three-canvas {display:block; margin:auto; border:1px solid #bbb;}
-.measure-label {background:#eef; padding:2px 12px; border-radius:7px;}
-.measure-point {width:16px;height:16px;border-radius:10px;background:#88a;position:absolute;transform:translate(-8px,-8px);border:2px solid #fff;}
-.measure-line {position:absolute; width:3px; background:#4378f2;}
-.measure-edit {font-size:1em; padding:4px 10px; margin:3px; border-radius:4px;}
+body { font-family: Montserrat,sans-serif; max-width:1000px; background:#F5F8FF; }
+h1 { margin-bottom:10px; }
+.ohjebox { background:#ddf6ff; padding:14px 18px; border-radius:7px; margin-bottom:20px; color:#055; }
+input, select, button { font-size:1em; margin:3px 0; }
+.tarjousbtn { padding:9px 18px; background:#00609A; color:#fff; font-size:1.2em; border:none; border-radius:8px; margin-top:12px; }
+label {font-weight:600;margin-right:8px;}
+#measurements span { background:#f9f9ff; border-radius:5px; margin-bottom:3px; display:inline-block; padding:2px 9px;}
+#pricebox { border:1px solid #acd; background:#F2FFD8; border-radius:7px;}
