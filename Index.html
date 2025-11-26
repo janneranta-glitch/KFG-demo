@@ -2,49 +2,81 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Kymppikaide – Automatisoitu tarjouslaskuri</title>
+  <title>Kymppikaide | Automatisoitu tarjouslaskuri</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
-<body>
-<div style="max-width:540px; margin:auto;">
-  <h2>Kymppikaide<br>Automatisoitu tarjouslaskuri</h2>
-  <label>Lataa PDF-/kuvatiedosto</label>
-  <input type="file" id="fileinput" accept=".pdf,.png,.jpg" multiple>
-  <div id="pdfCanvasArea" style="margin:10px 0; position:relative; width:520px; height:320px; border:1px solid #bbb; background:#fcfcfc;"></div>
-  <button id="setScaleBtn" style="margin:6px 0;">Aseta mittakaava (kalibroi)</button>
-  <div id="scaleForm" style="display:none;">
-    <label>Fyysinen pituus mittaviivalle (m):</label>
-    <input type="number" id="scaleMeters" step="0.01">
-    <button id="confirmScaleBtn">Vahvista mittakaava</button>
+<body style="background:#F5F8FF;">
+  <div style="max-width:700px;margin:auto;padding:22px 0;">
+    <img src="logo_yourcompany.png" alt="Kymppikaide" style="height:42px;margin-bottom:16px;">
+    <h1 style="color:#00609A;font-family:sans-serif;font-size:2em;">AUTOMATISOITU TARJOUSLASKURI</h1>
+    <div style="background:#ddf6ff;padding:10px 22px;border-radius:7px;margin-bottom:16px;color:#056;">
+      <b>Ohje:</b> <br>
+      1. Lataa julkisivupiirros PDF- tai kuvamuodossa<br>
+      2. Määritä mittakaava mittaviivaa piirtämällä<br>
+      3. Lisää kaiteiden ja käsijohteiden pituudet joko kuvaan merkitsemällä TAI kenttiin kirjoittamalla<br>
+      4. Valitse tuotteet, pintakäsittely ja asennus<br>
+      5. Täytä yhteystiedot ja lähetä tarjouspyyntö — saat hinnan heti!
+    </div>
+    <div style="margin-bottom:12px;">
+      <input type="file" id="fileinput" multiple accept=".pdf,.jpg,.png">
+      <button id="setScaleBtn">Aseta mittakaava</button>
+      <button id="addMeasure">Lisää merkintä viivalla</button>
+      <button id="zoomIn">Zoom +</button>
+      <button id="zoomOut">Zoom -</button>
+      <button id="clearMeasures">Tyhjennä merkinnät</button>
+    </div>
+    <div id="pdfCanvasArea" style="width:610px;height:340px;position:relative;border:1px solid #aaa;border-radius:6px;"></div>
+    <div id="measurements"></div>
+    <div style="background:#fff;padding:14px;border-radius:8px;margin-top:14px;">
+      <div>
+        <label>Tuote:</label>
+        <select id="productSelect">
+          <option value="pinnakaide">Pinnakaide</option>
+          <option value="lattakaide">Lattakaide</option>
+        </select>
+        <label>Pintakäsittely kaiteelle:</label>
+        <select id="kaideFinish">
+          <option value="maalaus">Maalaus</option>
+        </select>
+        <label>Pintakäsittely käsijohteelle:</label>
+        <select id="handrailFinish">
+          <option value="maalaus">Maalaus</option>
+          <option value="rst">RST</option>
+        </select>
+        <label>Asennus:</label>
+        <select id="installOption">
+          <option value="ei">Ei (vain toimitus)</option>
+          <option value="kyllä">Kyllä</option>
+        </select>
+        <label>Nousukaide?</label>
+        <select id="isStair">
+          <option value="ei">Tasokaide</option>
+          <option value="kyllä">Nousukaide</option>
+        </select>
+      </div>
+      <div>
+        <label><b>Pituudet (m):</b></label>
+        <input type="number" id="kaideLen" step="0.01" placeholder="Kaidepituus">
+        <input type="number" id="handLen" step="0.01" placeholder="Käsijohde">
+      </div>
+      <div>
+        <label><b>Yhteystiedot:</b></label><br>
+        <input type="text" id="contactName" placeholder="Nimi" required style="width:60%;">
+        <input type="email" id="contactEmail" placeholder="Sähköposti" required style="width:60%;">
+        <input type="tel" id="contactPhone" placeholder="Puhelin" required style="width:60%;">
+        <input type="text" id="contactAddr" placeholder="Kohdeosoite" required style="width:90%;">
+      </div>
+    </div>
+    <div style="background:#F2FFD8;padding:15px;margin-top:14px;border-radius:7px;font-size:1.15em;" id="pricebox"></div>
+    <div style="margin-top:16px;">
+      <button id="sendOfferBtn" style="padding:10px 20px;background:#00609A;color:#fff;font-size:1.2em;border:none;border-radius:7px;">LÄHETÄ TARJOUS</button>
+    </div>
+    <div style="color:#556;margin-top:22px;font-size:0.96em;">
+    <b>Kymppikaide Oy</b> | Y-tunnus: 1234567-0<br>
+    info@kymppikaide.fi | 040 123 4567 | Lammaskallionkatu 8, Kerava
+    </div>
   </div>
-  <div style="margin:8px 0;">
-    <label>Valitse kaidetyyppi: </label>
-    <select id="kaidetyyppi">
-      <option value="pinnakaide">Pinnakaide</option>
-      <option value="lattakaide">Lattakaide</option>
-    </select>
-    <label>Pintakäsittely: </label>
-    <select id="pintakäsittely">
-      <option value="maalaus">Maalaus</option>
-      <option value="rst">RST</option>
-    </select>
-    <label>Nousukaide?</label>
-    <select id="nousukaide">
-      <option value="ei">Ei</option>
-      <option value="kyllä">Kyllä</option>
-    </select>
-  </div>
-  <div style="margin:8px 0;">
-    <label>Tasokaiteen pituus (m):</label>
-    <input type="number" id="tasokaide" step="0.01">
-    <label>Nousukaiteen pituus (m):</label>
-    <input type="number" id="nousukaidepn" step="0.01">
-    <label>Käsijohteen pituus (m):</label>
-    <input type="number" id="handrailpn" step="0.01">
-  </div>
-  <div id="tarjouslaatikko" style="margin:12px 0; background:#eef; padding:10px; border-radius:8px;"></div>
-</div>
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
