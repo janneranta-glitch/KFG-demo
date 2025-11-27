@@ -24,5 +24,13 @@ export function needsZinc(kaytto) {
 export function mallidata(id) {
   return KAIDEMALLIT.find(m => m.id === id);
 }
-
+window.KAIDE_CONFIG = {
+  hinnat: {
+    pinnakaide: { sisä: 230, ulkona: 290, nousuker: 1.2 },
+    lattakaide: { sisä: 350, ulkona: 440, nousuker: 1.2 },
+    käsijohde: { maalaus: 8, rst: 9 }
+  },
+  asennus: { pinnakaide:45, lattakaide:65, käsijohde:40 },
+  toimitus: { install: { base:80, perkm:2.8 }, site:{base:90,perkm:3.5} }
+};
 // *** Muista: Päivitä vain config.js jos lisäät uusia vaihtoehtoja! ***
