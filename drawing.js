@@ -1,3 +1,45 @@
+window.pdfState = { zoom: 1.0, panX: 0, panY: 0, page: 1, scaleFactor: 50 };
+window.pdfCanvas = null;
+window.pdfCtx = null;
+window.manualMeasures = [];
+window.aiLines = [];
+window.measureType = "kaide";
+
+window.initCanvas = function(canvas){
+  window.pdfCanvas = canvas;
+  window.pdfCtx = canvas.getContext('2d');
+};
+window.drawLayers = function(){
+  window.pdfCtx.clearRect(0,0,window.pdfCanvas.width,window.pdfCanvas.height);
+  // Piirrä AI-linjat
+  window.aiLines.forEach(l=>{
+    window.pdfCtx.save();
+    window.pdfCtx.strokeStyle = l.type==="kaide"?"#22f":"#29c";
+    window.pdfCtx.lineWidth = 7;
+    window.pdfCtx.beginPath();
+    window.pdfCtx.moveTo(l.x1*window.pdfState.zoom+window.pdfState.panX, l.y1*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.lineTo(l.x2*window.pdfState.zoom+window.pdfState.panX, l.y2*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.stroke();
+    window.pdfCtx.font="15px Arial"; window.pdfCtx.fillStyle="#22f";
+    window.pdfCtx.fillText(l.length.toFixed(2)+"m",((l.x1+l.x2)/2)*window.pdfState.zoom+window.pdfState.panX, ((l.y1+l.y2)/2)*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.restore();
+  });
+  // Piirrä manuaaliviivat
+  window.manualMeasures.forEach(m=>{
+    window.pdfCtx.save();
+    window.pdfCtx.strokeStyle = m.type==="kaide"?"#ea4242":"#c2e91c";
+    window.pdfCtx.lineWidth = 3;
+    window.pdfCtx.beginPath();
+    window.pdfCtx.moveTo(m.x1*window.pdfState.zoom+window.pdfState.panX, m.y1*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.lineTo(m.x2*window.pdfState.zoom+window.pdfState.panX, m.y2*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.stroke();
+    let dist = Math.sqrt(Math.pow(m.x1-m.x2,2)+Math.pow(m.y1-m.y2,2))/window.pdfState.scaleFactor;
+    window.pdfCtx.font="13px Arial"; window.pdfCtx.fillStyle="#ea4242";
+    window.pdfCtx.fillText(dist.toFixed(2)+"m",((m.x1+m.x2)/2)*window.pdfState.zoom+window.pdfState.panX, ((m.y1+m.y2)/2)*window.pdfState.zoom+window.pdfState.panY);
+    window.pdfCtx.restore();
+  });
+};
+
 window.DrawState = {
   points: [],
   handrail: [],
